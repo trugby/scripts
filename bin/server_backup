@@ -147,8 +147,8 @@ fi
 # -----------------------------------------------------------------------------
 # Create backup of server directory
 echo "-- Create backup of server directory"
-echo "cd ${HOME} && tar -cf - ${SERVER} | gzip -9c > ${OUTPUT}.${DATE}.files.tar.gz"
-cd ${HOME} && tar -cf - ${SERVER} | gzip -9c > ${OUTPUT}.${DATE}.files.tar.gz
+echo "cd ${SERVER} && tar -cf - * | gzip -9c > ${OUTPUT}.${DATE}.files.tar.gz"
+cd ${SERVER} && tar -cf - * | gzip -9c > ${OUTPUT}.${DATE}.files.tar.gz
 echo ""
 
 # -----------------------------------------------------------------------------
