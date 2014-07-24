@@ -60,7 +60,7 @@ Optional arguments:\n
 \t -h [-help]\n
 \n
 Example:\n
-\t./server_backup -s prod -d db535557881 -h db535557881.db.1and1.com -u dbo535557881 -p 123.qwe -o ~/backups/prod.db535557881
+\tserver_backup -s prod -d db535557881 -h db535557881.db.1and1.com -u dbo535557881 -p 123.qwe -o ~/backups/prod.db535557881
 \n
  Author: Jose Manuel Rodriguez Carrasco\n
 \n
@@ -147,13 +147,13 @@ fi
 # -----------------------------------------------------------------------------
 # Create backup of server directory
 echo "-- Create backup of server directory"
-echo "cd ${HOME} && tar -cf - ${SERVER} | gzip -9c > ${OUTPUT}.${DATE}.tar.gz"
-cd ${HOME} && tar -cf - ${SERVER} | gzip -9c > ${OUTPUT}.${DATE}.tar.gz
+echo "cd ${HOME} && tar -cf - ${SERVER} | gzip -9c > ${OUTPUT}.${DATE}.files.tar.gz"
+cd ${HOME} && tar -cf - ${SERVER} | gzip -9c > ${OUTPUT}.${DATE}.files.tar.gz
 echo ""
 
 # -----------------------------------------------------------------------------
 # Create backup of database
 echo "-- Create backup of database"
-echo "mysqldump ${DATABASE} -h ${HOST} -u ${USER} ${PASSWD_PARAMETERS} --single-transaction --quick | gzip -9c > ${OUTPUT}.${DATE}.gz"
-mysqldump ${DATABASE} -h ${HOST} -u ${USER} ${PASSWD_PARAMETERS} --single-transaction --quick | gzip -9c > ${OUTPUT}.${DATE}.gz
+echo "mysqldump ${DATABASE} -h ${HOST} -u ${USER} ${PASSWD_PARAMETERS} --single-transaction --quick | gzip -9c > ${OUTPUT}.${DATE}.db.gz"
+mysqldump ${DATABASE} -h ${HOST} -u ${USER} ${PASSWD_PARAMETERS} --single-transaction --quick | gzip -9c > ${OUTPUT}.${DATE}.db.gz
 echo ""
