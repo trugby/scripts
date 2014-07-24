@@ -60,7 +60,7 @@ sub main()
 	});
 	open( my $fh, "<:encoding(utf8)", $INIT_EXT_FILE ) or die "$INIT_EXT_FILE: $!";
 	while ( my $row = $csv->getline( $fh ) ) {
-		# "virtuemart_product_id","product_name","product_price","custom_title","custom_value","custom_ordering","intnotes"
+		# "virtuemart_product_id","product_name","product_price","custom_title","custom_value","custom_ordering","published","intnotes"
 		if ( scalar(@{$row}) >= 6 ) {
 			my ($i_id) = $row->[0]; $i_id=~ s/\"//g; $i_id=~ s/\r//g;
 			my ($i_name) = $row->[1]; $i_name=~ s/\"//g; $i_name=~ s/\r//g;
@@ -68,7 +68,8 @@ sub main()
 			my ($i_sizetitle) = $row->[3]; $i_sizetitle=~ s/\"//g; $i_sizetitle=~ s/\r//g;
 			my ($i_sizes) = $row->[4]; $i_sizes=~ s/\"//g; $i_sizes=~ s/\r//g;
 			my ($i_sizeordering) = $row->[5]; $i_sizeordering=~ s/\"//g; $i_sizeordering=~ s/\r//g;
-			my ($i_link) = $row->[6]; $i_link=~ s/\"//g; $i_link=~ s/\r//g;
+			my ($i_published) = $row->[6]; $i_published=~ s/\"//g; $i_published=~ s/\r//g;
+			my ($i_link) = $row->[7]; $i_link=~ s/\"//g; $i_link=~ s/\r//g;
 			my ($i_prod) = {
 				'id'		=> $i_id,
 				'name'		=> $i_name,
@@ -84,20 +85,31 @@ sub main()
 			$i_prod->{'sizes'} = $sizes if ( defined $sizes and scalar(@{$sizes}) > 0 );
 			print "## product > \n".Dumper($i_prod)."\n";
 			
+			my ($logger,$o_report);
 			my ($shop_name) = 'sportsdirect';
-			if ( index($i_link, $shop_name) != -1 ) {
+			if ( defined $i_published and (index($i_link, $shop_name) != -1) ) {
 				print "### checking $shop_name\n";
-				my ($logger,$o_report) = sportdirect::update_product($i_prod);
+				($logger,$o_report) = sportdirect::update_product($i_prod);
+			}
+			else {
+				#$shop_name = 'lovell-rugby';
+				#print "### checking $shop_name\n";
+				#if ( defined $i_published and (index($i_link, $shop_name) != -1) ) {
+				#	print "### checking $shop_name\n";
+				#	$logger,$o_report = lovellrugby::update_product($i_prod);
+				#}
+			}
 #print STDERR "\n\n\n";
 #print STDERR "LOGGER:\n".Dumper($logger)."\n";
 #print STDERR "RESULTS:\n".Dumper($o_report)."\n";
-				if ( defined $o_report ) {
-					foreach my $lang (@{$LANGUAGES}) {
-						if ( exists $o_report->{$lang} and ($o_report->{$lang} ne '') ) {
-							$o_reports->{$lang} .= $o_report->{$lang};	
-						}
+			if ( defined $o_report ) {
+				foreach my $lang (@{$LANGUAGES}) {
+					if ( exists $o_report->{$lang} and ($o_report->{$lang} ne '') ) {
+						$o_reports->{$lang} .= $o_report->{$lang};	
 					}
 				}
+			}
+			if ( defined $logger ) {
 				if ( $logger->{'error'} == 1 ) {
 					$e_message .= "# $i_id > $i_name [PROBLEMS]\n";
 					$e_message .= $logger->{'log'}."\n";
@@ -106,17 +118,8 @@ sub main()
 				if ( $logger->{'warning'} == 1 ) {
 					$e_message .= "# $i_id > $i_name\n";
 					$e_message .= $logger->{'log'}."\n";
-				}
+				}				
 			}
-			else {
-				my ($shop_name) = 'lovell-rugby';
-				#print "### checking $shop_name\n";
-				#if ( index($i_link_en, $shop_name) != -1 ) {
-				#	my ($e_msg) = lovellrugby::down_product($i_links, $cookies->{$shop_name});
-				#	$e_message .= "$e_msg\n";
-				#}
-			}
-
 		}
 	}
 	$csv->eof or $csv->error_diag();

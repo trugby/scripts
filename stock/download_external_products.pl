@@ -85,10 +85,9 @@ sub main()
 			};
 			print "## product > \n".Dumper($i_prod)."\n";
 			
+			my ($logger,$o_report);
 			my ($shop_name) = 'sportsdirect';
 			if ( index($i_link_en, $shop_name) != -1 ) {
-				
-				
 				print "### prepare workspace $shop_name\n";
 				my ($tmp_dir)	= $SHOP_TMP_DIR->{$shop_name};
 				my ($prod_tmp_dir)	= $SHOP_PROD_IMG_DIR->{$shop_name};				
@@ -96,17 +95,27 @@ sub main()
 				common::prepare_wspace($prod_tmp_dir);
 				
 				print "### checking $shop_name\n";
-				my ($logger,$o_report) = sportdirect::down_product($i_prod);
+				($logger,$o_report) = sportdirect::down_product($i_prod);
+			}
+			else {
+				my ($shop_name) = 'lovell-rugby';
+				#print "### checking $shop_name\n";
+				#if ( index($i_link_en, $shop_name) != -1 ) {
+				#	my ($e_msg) = lovellrugby::down_product($i_links, $cookies->{$shop_name});
+				#	$e_message .= "$e_msg\n";
+				#}
+			}
 #print STDERR "\n\n\n";
 #print STDERR "LOGGER:\n".Dumper($logger)."\n";
 #print STDERR "RESULTS:\n".Dumper($o_report)."\n";
-				if ( defined $o_report ) {
-					foreach my $lang (@{$LANGUAGES}) {
-						if ( exists $o_report->{$lang} and ($o_report->{$lang} ne '') ) {
-							$o_reports->{$lang} .= $o_report->{$lang};	
-						}
+			if ( defined $o_report ) {
+				foreach my $lang (@{$LANGUAGES}) {
+					if ( exists $o_report->{$lang} and ($o_report->{$lang} ne '') ) {
+						$o_reports->{$lang} .= $o_report->{$lang};	
 					}
 				}
+			}
+			if ( defined $logger ) {
 				my ($i_id) = $i_sku;
 				my ($i_name) = $i_sku;
 				if ( $logger->{'error'} == 1 ) {
@@ -117,17 +126,8 @@ sub main()
 				if ( $logger->{'warning'} == 1 ) {
 					$e_message .= "# $i_id > $i_name\n";
 					$e_message .= $logger->{'log'}."\n";
-				}
+				}				
 			}
-			else {
-				my ($shop_name) = 'lovell-rugby';
-				#print "### checking $shop_name\n";
-				#if ( index($i_link_en, $shop_name) != -1 ) {
-				#	my ($e_msg) = lovellrugby::down_product($i_links, $cookies->{$shop_name});
-				#	$e_message .= "$e_msg\n";
-				#}
-			}
-
 		}
 	}
 	$csv->eof or $csv->error_diag();
