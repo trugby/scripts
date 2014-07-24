@@ -16,37 +16,42 @@ then
 	source ${HOME}/.bashrc
 fi
 
+SERVER=""
 DATABASE=""
 HOST=""
 USER=""
 PASSWD=""
 OUTPUT=""
+DATE=$(date "+%Y-%m-%d_%H:%M:%S")
 
 # -----------------------------------------------------------------------------
 # Usage
 
 USAGE="
 \n
- APPRIS's binary package.\n
+ Backup binary.\n
 \n
  Name:\n
-\t appris_db_backup\n
+\t server_backup\n
 \n
  Description:\n
-\t create mysql dump file for an APPRIS database.\n
+\t create mysqldump file and tar.gz file from given server.\n
 \n
 Required arguments:\n
+\t -s [-server]\n
+\t\t Name of server directory\n
+\n
 \t -d [-database]\n
-\t\t Name of database (eg, appris_homo_sapiens_gencode_19_dev)\n
+\t\t Name of database\n
 \n
 \t -h [-host]\n
-\t\t Host of database (eg, jabba.cnio.es)\n
+\t\t Host of database\n
 \n
 \t -u [-user]\n
-\t\t User of database (eg, wensembl)\n
+\t\t User of database\n
 \n
 \t -o [-out]\n
-\t\t Output file (mysql-gzip format)\n
+\t\t Core name of output file (mysql-gzip format)\n
 \n
 Optional arguments:\n
 \t -p [-passwd]\n
@@ -54,8 +59,10 @@ Optional arguments:\n
 \n
 \t -h [-help]\n
 \n
+Example:\n
+\t./server_backup -s prod -d db535557881 -h db535557881.db.1and1.com -u dbo535557881 -p 123.qwe -o ~/backups/prod.db535557881
 \n
- Author: Jose Manuel Rodriguez Carrasco -jmrodriguez@cnio.es- (INB-GN2,CNIO)\n
+ Author: Jose Manuel Rodriguez Carrasco\n
 \n
 "
 # -----------------------------------------------------------------------------
@@ -64,6 +71,10 @@ Optional arguments:\n
 while expr "//$1" : //- >/dev/null
 do
 	case "$1" in
+		-s | -server )
+			SERVER=$2
+			shift
+			;;
 		-d | -database )
 			DATABASE=$2
 			shift
@@ -97,6 +108,11 @@ do
 	shift
 done
 
+if [ "${SERVER}" == "" ]; then
+	echo You must specify a server!
+	echo -e $USAGE
+	exit 1
+fi
 if [ "${DATABASE}" == "" ]; then
 	echo You must specify a database!
 	echo -e $USAGE
@@ -129,9 +145,15 @@ fi
 
 
 # -----------------------------------------------------------------------------
-# Create backup
-echo "---------------------------"
-echo "Create backup"
-echo "mysqldump ${DATABASE} -h ${HOST} -u ${USER} ${PASSWD_PARAMETERS} --single-transaction --quick | gzip -9c > ${OUTPUT}"
-mysqldump ${DATABASE} -h ${HOST} -u ${USER} ${PASSWD_PARAMETERS} --single-transaction --quick | gzip -9c > ${OUTPUT}
+# Create backup of server directory
+echo "-- Create backup of server directory"
+echo "cd ${HOME} && tar -cf - ${SERVER} | gzip -9c > ${OUTPUT}.${DATE}.tar.gz"
+cd ${HOME} && tar -cf - ${SERVER} | gzip -9c > ${OUTPUT}.${DATE}.tar.gz
+echo ""
+
+# -----------------------------------------------------------------------------
+# Create backup of database
+echo "-- Create backup of database"
+echo "mysqldump ${DATABASE} -h ${HOST} -u ${USER} ${PASSWD_PARAMETERS} --single-transaction --quick | gzip -9c > ${OUTPUT}.${DATE}.gz"
+mysqldump ${DATABASE} -h ${HOST} -u ${USER} ${PASSWD_PARAMETERS} --single-transaction --quick | gzip -9c > ${OUTPUT}.${DATE}.gz
 echo ""
