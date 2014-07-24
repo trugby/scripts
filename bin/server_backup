@@ -155,13 +155,13 @@ echo ""
 # -----------------------------------------------------------------------------
 # Create backup of server directory
 echo "-- Create backup of server directory"
-echo "cd ${SERVER} && tar -czf ${OUTPUT}.${DATE}.files.tar.gz *"
-cd ${SERVER} && tar -czf ${OUTPUT}.${DATE}.files.tar.gz *
+echo "cd ${SERVER} && tar -czf ${BACKUP_DIR}/${OUTPUT}.${DATE}.files.tar.gz *"
+cd ${SERVER} && tar -czf ${BACKUP_DIR}/${OUTPUT}.${DATE}.files.tar.gz *
 echo ""
 
 # -----------------------------------------------------------------------------
 # Create backup of database
 echo "-- Create backup of database"
-echo "mysqldump ${DATABASE} -h ${HOST} -u ${USER} ${PASSWD_PARAMETERS} --single-transaction --quick | gzip -9c > ${OUTPUT}.${DATE}.db.gz"
-mysqldump ${DATABASE} -h ${HOST} -u ${USER} ${PASSWD_PARAMETERS} --single-transaction --quick | gzip -9c > ${OUTPUT}.${DATE}.db.gz
+echo "mysqldump ${DATABASE} -h ${HOST} -u ${USER} ${PASSWD_PARAMETERS} --single-transaction --quick | gzip -9c > ${BACKUP_DIR}/${OUTPUT}.${DATE}.db.gz"
+mysqldump ${DATABASE} -h ${HOST} -u ${USER} ${PASSWD_PARAMETERS} --single-transaction --quick | gzip -9c > ${BACKUP_DIR}/${OUTPUT}.${DATE}.db.gz
 echo ""
