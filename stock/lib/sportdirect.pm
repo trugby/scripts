@@ -295,7 +295,7 @@ sub down_prod_wscan($\$)
 		my ($o_price) = '';		
 		for my $node ($doc->findnodes('//span[@id="lblSellingPrice"]')) {
 			my ($o_price_cont) = $node->textContent();
-			if ( $o_price_cont =~ /(\d{1,2},\d{1,2})/ ) {
+			if ( $o_price_cont =~ /(\d{1,3},\d{1,2})/ ) {
 				$o_price = $1; $o_price =~ s/\s//g; $o_price =~ s/\,/./;
 			}
 		}
@@ -410,7 +410,7 @@ sub update_prod_wscan($\$)
 		my ($o_price) = '';		
 		for my $node ($doc->findnodes('//span[@id="lblSellingPrice"]')) {
 			my ($o_price_cont) = $node->textContent();
-			if ( $o_price_cont =~ /(\d{1,2},\d{1,2})/ ) {
+			if ( $o_price_cont =~ /(\d{1,3},\d{1,2})/ ) {
 				$o_price = $1; $o_price =~ s/\s//g; $o_price =~ s/\,/./;
 			}
 		}
