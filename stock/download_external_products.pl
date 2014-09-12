@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Text::CSV;
+use Spreadsheet::ParseExcel;
 use Data::Dumper;
 use FindBin;
 use lib "$FindBin::Bin/lib";
@@ -58,81 +58,103 @@ sub main()
 	
 	# get list of links/products/languages
 	print "# process initial products...\n";
-	my ($csv) = Text::CSV->new ({
-		binary    => 1,
-		auto_diag => 1,
-		sep_char  => ','    # not really needed as this is the default
-	});
-	open( my $fh, "<:encoding(utf8)", $INIT_EXT_FILE ) or die "$INIT_EXT_FILE: $!";
-	while ( my $row = $csv->getline( $fh ) ) {
-		# "sku", "category_path", "link_en","link_es","link_pt"
-		if ( scalar(@{$row}) >= 4 ) {
-			my ($i_sku) = $row->[0]; $i_sku=~ s/\"//g; $i_sku=~ s/\r//g;
-			my ($i_cat_path) = $row->[1]; $i_cat_path=~ s/\"//g; $i_cat_path=~ s/\r//g;
-			my ($i_man_path) = $row->[2]; $i_man_path=~ s/\"//g; $i_man_path=~ s/\r//g;
-			my ($i_link_en) = $row->[3]; $i_link_en=~ s/\"//g; $i_link_en=~ s/\r//g;
-			my ($i_link_es) = $row->[4]; $i_link_es=~ s/\"//g; $i_link_es=~ s/\r//g;
-			my ($i_link_pt) = $row->[5]; $i_link_en=~ s/\"//g; $i_link_en=~ s/\r//g;
-			my ($i_prod) = {
-				'sku'				=> $i_sku,
-				'category_id'		=> $i_cat_path,
-				'manufacturer_id'	=> $i_man_path,
-				'lang'				=> {
-					$LANGUAGES->[0]	=> $i_link_en,
-					$LANGUAGES->[1]	=> $i_link_es,
-					$LANGUAGES->[2]	=> $i_link_pt
-				}
-			};
-			print "## product > \n".Dumper($i_prod)."\n";
+	my ($xls_parser) = Spreadsheet::ParseExcel->new();
+	my ($xls_workbook) = $xls_parser->parse($INIT_EXT_FILE);
+	unless ( defined $xls_workbook ) {
+		exit 1;
+	}
+	foreach my $worksheet ( $xls_workbook->worksheets() )
+	{
+		my ($row_min, $row_max) = $worksheet->row_range();
+		my ($col_min, $col_max) = $worksheet->col_range();
+		foreach my $row ( $row_min .. $row_max )
+		{			
+			# "sku", "category_path", "manufacter_id", "link_en","link_es","link_pt"
+			my ($cell);
+			my ($i_sku);
+			my ($i_cat_path);
+			my ($i_man_path);
+			my ($i_link_en);
+			my ($i_link_es);
+			my ($i_link_pt);
+			$cell = $worksheet->get_cell($row, 0);
+			if ( defined $cell ) { $i_sku = $cell->value() }
 			
-			my ($logger,$o_report);
-			my ($shop_name) = 'sportsdirect';
-			if ( index($i_link_en, $shop_name) != -1 ) {
-				print "### prepare workspace $shop_name\n";
-				my ($tmp_dir)	= $SHOP_TMP_DIR->{$shop_name};
-				my ($prod_tmp_dir)	= $SHOP_PROD_IMG_DIR->{$shop_name};				
-				common::prepare_wspace($tmp_dir);
-				common::prepare_wspace($prod_tmp_dir);
-				
-				print "### checking $shop_name\n";
-				($logger,$o_report) = sportdirect::down_product($i_prod);
-			}
-			else {
-				my ($shop_name) = 'lovell-rugby';
-				#print "### checking $shop_name\n";
-				#if ( index($i_link_en, $shop_name) != -1 ) {
-				#	my ($e_msg) = lovellrugby::down_product($i_links, $cookies->{$shop_name});
-				#	$e_message .= "$e_msg\n";
-				#}
-			}
-#print STDERR "\n\n\n";
-#print STDERR "LOGGER:\n".Dumper($logger)."\n";
-#print STDERR "RESULTS:\n".Dumper($o_report)."\n";
-			if ( defined $o_report ) {
-				foreach my $lang (@{$LANGUAGES}) {
-					if ( exists $o_report->{$lang} and ($o_report->{$lang} ne '') ) {
-						$o_reports->{$lang} .= $o_report->{$lang};	
+			$cell = $worksheet->get_cell($row, 1);
+			if ( defined $cell ) { $i_cat_path = $cell->value() }
+			
+			$cell = $worksheet->get_cell($row, 2);
+			if ( defined $cell ) { $i_man_path = $cell->value() }
+			
+			$cell = $worksheet->get_cell($row, 3);
+			if ( defined $cell ) { $i_link_en = $cell->value() }
+			
+			$cell = $worksheet->get_cell($row, 4);
+			if ( defined $cell ) { $i_link_es = $cell->value() }
+			
+			$cell = $worksheet->get_cell($row, 5);
+			if ( defined $cell ) { $i_link_pt = $cell->value() }
+			
+			if ( defined $i_sku and defined $i_link_en and defined $i_link_es and defined $i_link_pt ) {
+				my ($i_prod) = {
+					'sku'				=> $i_sku,
+					'category_id'		=> $i_cat_path,
+					'manufacturer_id'	=> $i_man_path,
+					'lang'				=> {
+						$LANGUAGES->[0]	=> $i_link_en,
+						$LANGUAGES->[1]	=> $i_link_es,
+						$LANGUAGES->[2]	=> $i_link_pt
+					}
+				};
+				print "## product > \n".Dumper($i_prod)."\n";
+								
+				my ($logger,$o_report);
+				my ($shop_name) = 'sportsdirect';
+				if ( index($i_link_en, $shop_name) != -1 ) {
+					print "### prepare workspace $shop_name\n";
+					my ($tmp_dir)	= $SHOP_TMP_DIR->{$shop_name};
+					my ($prod_tmp_dir)	= $SHOP_PROD_IMG_DIR->{$shop_name};				
+					common::prepare_wspace($tmp_dir);
+					common::prepare_wspace($prod_tmp_dir);
+					
+					print "### checking $shop_name\n";
+					($logger,$o_report) = sportdirect::down_product($i_prod);
+				}
+				else {
+					my ($shop_name) = 'lovell-rugby';
+					#print "### checking $shop_name\n";
+					#if ( index($i_link_en, $shop_name) != -1 ) {
+					#	my ($e_msg) = lovellrugby::down_product($i_links, $cookies->{$shop_name});
+					#	$e_message .= "$e_msg\n";
+					#}
+				}
+print STDERR "\n\n\n";
+print STDERR "LOGGER:\n".Dumper($logger)."\n";
+print STDERR "RESULTS:\n".Dumper($o_report)."\n";
+				if ( defined $o_report ) {
+					foreach my $lang (@{$LANGUAGES}) {
+						if ( exists $o_report->{$lang} and ($o_report->{$lang} ne '') ) {
+							$o_reports->{$lang} .= $o_report->{$lang};	
+						}
 					}
 				}
-			}
-			if ( defined $logger ) {
-				my ($i_id) = $i_sku;
-				my ($i_name) = $i_sku;
-				if ( $logger->{'error'} == 1 ) {
-					$e_message .= "# $i_id > $i_name [PROBLEMS]\n";
-					$e_message .= $logger->{'log'}."\n";
-					next; # jump to the next product
+				if ( defined $logger ) {
+					my ($i_id) = $i_sku;
+					my ($i_name) = $i_sku;
+					if ( $logger->{'error'} == 1 ) {
+						$e_message .= "# $i_id > $i_name [PROBLEMS]\n";
+						$e_message .= $logger->{'log'}."\n";
+						next; # jump to the next product
+					}
+					if ( $logger->{'warning'} == 1 ) {
+						$e_message .= "# $i_id > $i_name\n";
+						$e_message .= $logger->{'log'}."\n";
+					}				
 				}
-				if ( $logger->{'warning'} == 1 ) {
-					$e_message .= "# $i_id > $i_name\n";
-					$e_message .= $logger->{'log'}."\n";
-				}				
 			}
 		}
 	}
-	$csv->eof or $csv->error_diag();
-	close $fh;
-
+	
 	print "###########################################################\n\n";
 	print "$e_message\n";
 	

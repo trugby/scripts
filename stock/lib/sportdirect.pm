@@ -5,6 +5,7 @@ use warnings;
 use XML::LibXML;
 use FindBin;
 use Data::Dumper;
+use utf8;
 use FindBin;
 use lib "$FindBin::Bin";
 use CONSTANT;
@@ -35,6 +36,7 @@ sub down_prod_img(\$);
 sub print_update_prod($$$);
 sub print_down_prod($$);
 sub print_prod_result($$);
+sub _delete_unwanted_desc($);
 
 
 #################
@@ -104,13 +106,13 @@ sub down_product($)
 			
 			# create report rst
 			if ( $logger->{'error'} == 0 ) {
-				my ($txt) = print_down_prod($lang, $o_report);
+				my ($log, $txt) = print_down_prod($lang, $o_report);
 				if ( defined $txt ) {
 					$results->{$lang} = $txt;
 				}
 				else {
 					$logger->{'error'} 	= 1;
-					$logger->{'log'}	= "Printing product\n";
+					$logger->{'log'}	= "Printing product: ".$log->{'log'}."\n";
 					return $logger;
 				}
 			}
@@ -217,8 +219,10 @@ sub down_prod_wscan($\$)
 		# get product name
 		my ($o_name) = '';
 		for my $node ($doc->findnodes('//span[@id="ProductName"]')) {
-			#$o_name = $node->toString(2, 'UTF-8');
-			$o_name = $node->textContent();
+			my ($txt) = $node->textContent();
+			utf8::decode($txt);
+			utf8::encode($txt);			
+			$o_name = $txt;
 		}
 		if ( defined $o_name and ($o_name ne '') ) {
 			${$o_report}->{'name'} = $o_name;
@@ -239,9 +243,14 @@ sub down_prod_wscan($\$)
 				if ( $node2->nodeName eq 'a' ) {
 					$o_manu .= $node2->textContent();
 				}
+				elsif ( ($node2->nodeName eq 'p') && ($node2->getAttribute('class') eq 'productCode')) {
+					# don't add this tag
+				}
 				elsif ( ($node2->nodeName ne 'a') && ($num_br < 2) ) {
-					my ($txt) = $node2->toString(2, 'UTF-8');
-					$o_desc .= $txt;
+					my ($txt) = $node2->toString(2);
+					utf8::decode($txt);
+					utf8::encode($txt);					
+					$o_desc .= $txt;					
 					if ( $node2->nodeName eq 'br' && ($num_br >= 0) ) {
 						$num_br++;
 					}
@@ -252,6 +261,7 @@ sub down_prod_wscan($\$)
 			}
 		}
 		if ( defined $o_desc and ($o_desc ne '') ) {
+			$o_desc = _delete_unwanted_desc($o_desc);
 			${$o_report}->{'description'} = $o_desc;
 			if ( defined $o_s_desc and ($o_s_desc ne '') ) {
 				${$o_report}->{'s_desc'} = $o_s_desc;
@@ -354,10 +364,10 @@ sub down_prod_img(\$)
 					my ($link) = $images->{$ty};
 					my ($n) = $link; if ( $link =~ /\/([^\/]*)$/m ) { $n = $1 };
 					my ($output) = $PRODUCT_IMG_DIR."/".$n;
-					$output = www_get($link, $output);
-					if (defined $output ) {
+					#$output = www_get($link, $output);
+					#if (defined $output ) {
 						$rep->{$ty} = $n;
-					}
+					#}
 				}
 			}
 			if ( defined $rep ) {
@@ -489,6 +499,11 @@ sub update_prod_wscan($\$)
 sub print_down_prod($$)
 {
 	my ($lang, $o_report) = @_;
+	my ($logger) = {
+		'error'		=> 0,
+		'warning'	=> 0,
+		'log'		=> '',
+	};
 	my ($published) = '0';
 	my ($sku) = '';
 	my ($name) = '';
@@ -510,21 +525,37 @@ sub print_down_prod($$)
 	if ( exists $o_report->{'sku'} and defined $o_report->{'sku'} and ($o_report->{'sku'} ne '') ) {
 		$sku = $o_report->{'sku'};
 	}
-	else { return undef } # required field
+	else {
+		$logger->{'error'} = 1;
+		$logger->{'log'}	.= "SKU required\n";		
+		return ($logger, undef);
+	}
 	
 	if ( exists $o_report->{'name'} and defined $o_report->{'name'} and ($o_report->{'name'} ne '') ) {
 		$name = $o_report->{'name'};
 	}
-	else { return undef } # required field
+	else {
+		$logger->{'error'} = 1;
+		$logger->{'log'}	.= "Name required\n";		
+		return ($logger, undef);
+	}
 	
 	if ( ($sku ne '') and ($name ne '') ) {
-		$slug = lc($name); $slug =~ s/\s+/\-/g;
+		$slug = lc($name); $slug =~ s/\s+/\-/g; #$slug =~ s/[^a-zA-Z0-9\-]*//g;
 		if ( $sku =~ /\/([\d|\w]*)$/ ) {
 			$slug .= "-".$1;
 		}
-		else { return undef } # required field
+		else {
+			$logger->{'error'} = 1;
+			$logger->{'log'}	.= "SKU-Name required\n";		
+			return ($logger, undef);
+		}
 	}
-	else { return undef } # required field
+	else {
+		$logger->{'error'} = 1;
+		$logger->{'log'}	.= "SKU-Name required\n";		
+		return ($logger, undef);
+	}
 
 	if ( exists $o_report->{'s_desc'} and defined $o_report->{'s_desc'} and ($o_report->{'s_desc'} ne '') ) {
 		$s_desc = $o_report->{'s_desc'};
@@ -548,7 +579,11 @@ sub print_down_prod($$)
 		if ( exists $o_report->{'price'} and defined $o_report->{'price'} and ($o_report->{'price'} ne '') ) {
 			$price = $o_report->{'price'};
 		}
-		else { return undef } # required field
+		else {
+			$logger->{'error'} = 1;
+			$logger->{'log'}	.= "Price required\n";		
+			return ($logger, undef);
+		}
 		
 		if ( exists $o_report->{'category_id'} and defined $o_report->{'category_id'} and ($o_report->{'category_id'} ne '') ) {
 			$categories = $o_report->{'category_id'};
@@ -573,14 +608,18 @@ sub print_down_prod($$)
 			$cust_val =~ s/\~$//g;
 			$cust_order =~ s/\~$//g;
 		}
-		else { return undef } # required field
+		else {
+			$logger->{'error'} = 1;
+			$logger->{'log'}	.= "Sizes required\n";		
+			return ($logger, undef);
+		}
 
 		if ( exists $o_report->{'images'} and defined $o_report->{'images'} and (scalar(@{$o_report->{'images'}}) > 0) ) {		
 			#foreach my $images (@{$o_report->{'images'}}) {
 			for (my $i = 0; $i < scalar(@{$o_report->{'images'}}); $i++) {
 				my ($images) = $o_report->{'images'}->[$i];
 				#foreach my $ty ('l','xxl') {
-				foreach my $ty ('l') {
+				foreach my $ty ('xxl') { # print only XXL images
 					if ( exists $images->{$ty} ) {					
 						my ($img) = $images->{$ty};
 						if ( defined $img and ($img ne '') ) {
@@ -596,17 +635,26 @@ sub print_down_prod($$)
 			$img_paths =~ s/\|$//g;
 			$img_order =~ s/\|$//g;
 		}
-		else { return undef } # required field
+		else {
+			$logger->{'error'} = 1;
+			$logger->{'log'}	.= "Images required\n";		
+			return ($logger, undef);
+		}
 			
 		if ( exists $o_report->{'link'} and defined $o_report->{'link'} and ($o_report->{'link'} ne '') ) {
 			if ( defined $lang and ($lang eq $MAIN_LANG) ) { # only for main lang 'EN'
 				$intnotes = $o_report->{'link'};
 			}
 		}
-		else { return undef } # required field
+		else {
+			$logger->{'error'} = 1;
+			$logger->{'log'}	.= "Link required\n";		
+			return ($logger, undef);
+		}
 	}
-	
-	my ($result) = 	'"'.$published.'",'.
+	my ($result);
+	if ( $lang eq $MAIN_LANG ) {
+		$result = 	'"'.$published.'",'.
 					'"'.$sku.'",'.
 					'"'.$name.'",'.
 					'"'.$slug.'",'.
@@ -621,9 +669,20 @@ sub print_down_prod($$)
 					'"'.$cust_order.'",'.
 					'"'.$img_names.'",'.
 					'"'.$img_paths.'",'.
-					'"'.$img_order.'",'.					
+					'"'.$img_order.'",'.
 					'"'.$intnotes.'"'."\n";
-	return $result;
+	}
+	else {
+		$result = 	'"'.$published.'",'.
+					'"'.$sku.'",'.
+					'"'.$name.'",'.
+					'"'.$slug.'",'.
+					'"'.$s_desc.'",'.
+					'"'.$desc.'",'."\n";
+	}
+
+
+	return ($logger, $result);
 	
 } # end print_down_prod
 
@@ -704,5 +763,14 @@ sub print_prod_result($$)
 	return $files
 	
 } # end print_prod_result
+
+sub _delete_unwanted_desc($) {
+	my ($str) = @_;
+	$str =~ s/&#13;//g;
+	$str =~ s|SportsDirect\.com|InSituSports\.com|g;
+	
+	return $str;
+}
+			
 
 1;

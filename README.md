@@ -11,7 +11,7 @@ Scripts for controlling stock
 1. Update the "initExtStock.csv"
 
 2. Run script:
-	perl insert_external_products.pl /kunden/homepages/24/d406245370/htdocs/data/stock/initExtStock.csv
+	perl scripts/stock/insert_external_products.pl /kunden/homepages/24/d406245370/htdocs/data/initExtStock.csv
 	
 	
 # UPDATE EXTERNAL PRODUCTS #

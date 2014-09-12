@@ -57,7 +57,7 @@ $LANGUAGES			= ['en','es','pt'];
 #$SCRIPT_DIR			= '/kunden/homepages/24/d406245370/htdocs/scripts/stock';
 #$DATA_DIR			= '/kunden/homepages/24/d406245370/htdocs/data/stock';
 #$TMP_DIR			= '/kunden/homepages/24/d406245370/htdocs/tmp/stock';
-#$PRODUCT_IMG_DIR 	= '/kunden/homepages/24/d406245370/htdocs/prod/images/stories/virtuemart/product';
+#$PRODUCT_IMG_DIR 	= '/kunden/homepages/24/d406245370/htdocs/beta/images/stories/virtuemart/product';
 #$PRODUCT_IMG_PATH 	= '';
 $SCRIPT_DIR			= '/Users/jmrodriguez/Google\ Drive/Stock/stock';
 $DATA_DIR			= '/Users/jmrodriguez/tmp';
@@ -72,7 +72,7 @@ $IMPORT_PRICESIZESTOCK_PROD_FILE	= $DATA_DIR.'/ImportPriceSizeStockProducts.csv'
 
 $DOWNN_SCRIPT_FILE		= $SCRIPT_DIR.'/download_external_products.pl';
 $CHECK_SCRIPT_FILE		= $SCRIPT_DIR.'/check_external_stock.pl';
-$CSVI_CRON_FILE			= '/kunden/homepages/24/d406245370/htdocs/prod/administrator/components/com_csvi/helpers/cron.php';
+$CSVI_CRON_FILE			= '/kunden/homepages/24/d406245370/htdocs/beta/administrator/components/com_csvi/helpers/cron.php';
 
 ############################
 # GLOBAL VARIABLES OF SHOP #
@@ -104,6 +104,8 @@ $SHOP_PROD_IMG_PATH	= {
 };
 $SHOP_CONV_SIZES	= {
 	'sportsdirect' => {
+			
+			# clothing sizes
 			'junior'	=> 'XS',
 			'extrasml'	=> 'XS',
 			'small'		=> 'S',
@@ -115,10 +117,16 @@ $SHOP_CONV_SIZES	= {
 			'xxxxlarge'	=> '4XL',	
 			'sml/med'	=> 'S/M',
 			'lge/xlge'	=> 'L/XL',
+			
+			# boxing gloves
+			'8oz'		=> '8OZ',
 			'10oz'		=> '10OZ',
 			'12oz'		=> '12OZ',
 			'14oz'		=> '14OZ',
 			'16oz'		=> '16OZ',
+			'18oz'		=> '18OZ',
+			
+			# shoes sizes
 			'6'			=> '6',
 			'6.5'		=> '6.5',
 			'7'			=> '7',
@@ -135,6 +143,23 @@ $SHOP_CONV_SIZES	= {
 			'12.5'		=> '12.5',
 			'13'		=> '13',
 			'13.5'		=> '13.5',
+			
+			'n'			=> 'N',
+			
+			# clothing junior sizes
+			'7-8(xsb)'	=> 'XSB',
+			'7-8(sb)'	=> 'SB',
+			'6-7yrs'	=> 'SB',
+			'7-8yrs'	=> 'SB',
+			'9-10(mb)'	=> 'MB',
+			'9-10yrs'	=> 'MB',
+			'11-12(lb)'	=> 'LB',
+			'11-12yrs'	=> 'LB',
+			'13(xlb)'	=> 'XLB',
+			'13yrs'		=> 'XLB',
+
+			# ball sizes
+			'size5'		=> '5',			
 	},
 	'lovell-rugby' => {
 		
