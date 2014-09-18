@@ -364,10 +364,10 @@ sub down_prod_img(\$)
 					my ($link) = $images->{$ty};
 					my ($n) = $link; if ( $link =~ /\/([^\/]*)$/m ) { $n = $1 };
 					my ($output) = $PRODUCT_IMG_DIR."/".$n;
-					#$output = www_get($link, $output);
-					#if (defined $output ) {
+					$output = www_get($link, $output);
+					if (defined $output ) {
 						$rep->{$ty} = $n;
-					#}
+					}
 				}
 			}
 			if ( defined $rep ) {
@@ -767,7 +767,8 @@ sub print_prod_result($$)
 sub _delete_unwanted_desc($) {
 	my ($str) = @_;
 	$str =~ s/&#13;//g;
-	$str =~ s|SportsDirect\.com|InSituSports\.com|g;
+	$str =~ s|SportsDirect|InSituSports|g;
+	$str =~ s|<!--[^\-]*-->||g;
 	
 	return $str;
 }
