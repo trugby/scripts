@@ -166,7 +166,8 @@ $SHOP_CONV_SIZES	= {
 	},
 };
 
-$SIZE_TITLE = 'Tallas / Sizes';
+#$SIZE_TITLE = 'Tallas / Sizes';
+$SIZE_TITLE = 'COM_VIRTUEMART_CUSTOM_FIELDS_SIZE_TITLE';
 
 $PROD_AVAILABILITY = '14d.gif';
 
