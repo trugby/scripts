@@ -159,7 +159,7 @@ sub send_email($$$$;$)
 	);
 	my ($text) = "Message control:\n\n".$content;
 	$msg->attach(
-		Type    	=> 'text/plain',
+		Type    	=> 'text/html',
 		Encoding 	=> 'quoted-printable',
 		Data    	=> $text,
 	);

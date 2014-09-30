@@ -22,6 +22,8 @@ my ($EMAILS_FROM)			= $CONSTANT::EMAILS_FROM;
 my ($EMAILS_TO)				= $CONSTANT::EMAILS_TO;
 my ($EMAILS_CHECK_SUBJECT)	= $CONSTANT::EMAILS_CHECK_SUBJECT;
 
+my ($VM_PRODDETAILS_URL)	= $CONSTANT::VM_PRODDETAILS_URL;
+
 # Input parameters
 my ($INIT_EXT_FILE) = $ARGV[0];
 unless ( defined $INIT_EXT_FILE  ) {
@@ -41,7 +43,7 @@ unless ( defined $INIT_EXT_FILE  ) {
 sub main()
 {
 	# create changed message
-	my ($e_message) = '';
+	my ($e_txt_msg, $e_html_msg) = ('','');
 	my ($o_reports);
 	
 	#load cookies
@@ -76,49 +78,55 @@ sub main()
 				'price'		=> $i_price,
 				'link'		=> $i_link,
 			};
-			my (@aux_sizes) = split('~', $i_sizes);
-			my ($sizes);		
-			foreach my $s (@aux_sizes) {
-				$s =~ s/\s*//g; $s = uc($s); $s =~ s/\r//g;
-				push(@{$sizes},$s);								
-			}
-			$i_prod->{'sizes'} = $sizes if ( defined $sizes and scalar(@{$sizes}) > 0 );
-			print "## product > \n".Dumper($i_prod)."\n";
-			
-			my ($logger,$o_report);
-			my ($shop_name) = 'sportsdirect';
-			if ( defined $i_published and (index($i_link, $shop_name) != -1) ) {
-				print "### checking $shop_name\n";
-				($logger,$o_report) = sportdirect::update_product($i_prod);
-			}
-			else {
-				#$shop_name = 'lovell-rugby';
-				#print "### checking $shop_name\n";
-				#if ( defined $i_published and (index($i_link, $shop_name) != -1) ) {
-				#	print "### checking $shop_name\n";
-				#	$logger,$o_report = lovellrugby::update_product($i_prod);
-				#}
-			}
+			if ( defined $i_published and ($i_published eq "1") ) {
+				my (@aux_sizes) = split('~', $i_sizes);
+				my ($sizes);		
+				foreach my $s (@aux_sizes) {
+					$s =~ s/\s*//g; $s = uc($s); $s =~ s/\r//g;
+					push(@{$sizes},$s);								
+				}
+				$i_prod->{'sizes'} = $sizes if ( defined $sizes and scalar(@{$sizes}) > 0 );
+				print "## product > \n".Dumper($i_prod)."\n";
+				
+				my ($logger,$o_report);
+				my ($shop_name) = 'sportsdirect';
+				if ( index($i_link, $shop_name) != -1 ) {
+					print "### checking $shop_name\n";
+					($logger,$o_report) = sportdirect::update_product($i_prod);
+				}
+				else {
+					#$shop_name = 'lovell-rugby';
+					#print "### checking $shop_name\n";
+					#if ( defined $i_published and (index($i_link, $shop_name) != -1) ) {
+					#	print "### checking $shop_name\n";
+					#	$logger,$o_report = lovellrugby::update_product($i_prod);
+					#}
+				}
 #print STDERR "\n\n\n";
 #print STDERR "LOGGER:\n".Dumper($logger)."\n";
 #print STDERR "RESULTS:\n".Dumper($o_report)."\n";
-			if ( defined $o_report ) {
-				foreach my $lang (@{$LANGUAGES}) {
-					if ( exists $o_report->{$lang} and ($o_report->{$lang} ne '') ) {
-						$o_reports->{$lang} .= $o_report->{$lang};	
+				if ( defined $o_report ) {
+					foreach my $lang (@{$LANGUAGES}) {
+						if ( exists $o_report->{$lang} and ($o_report->{$lang} ne '') ) {
+							$o_reports->{$lang} .= $o_report->{$lang};	
+						}
 					}
 				}
-			}
-			if ( defined $logger ) {
-				if ( $logger->{'error'} == 1 ) {
-					$e_message .= "# $i_id > $i_name [PROBLEMS]\n";
-					$e_message .= $logger->{'log'}."\n";
-					next; # jump to the next product
+				if ( defined $logger ) {
+					if ( $logger->{'error'} == 1 ) {
+						$e_txt_msg .= "# $i_id > $i_name [PROBLEMS]\n";
+						$e_txt_msg .= $logger->{'log'}."\n";
+						$e_html_msg .= "# $i_id > <a href='$VM_PRODDETAILS_URL&virtuemart_product_id=$i_id'>$i_name</a> [PROBLEMS]<br/>";						
+						$e_html_msg .= $logger->{'log'}."<br/><br/>";
+						next; # jump to the next product
+					}
+					if ( $logger->{'warning'} == 1 ) {
+						$e_txt_msg .= "# $i_id > $i_name\n";
+						$e_txt_msg .= $logger->{'log'}."\n";
+						$e_html_msg .= "# $i_id > <a href='$VM_PRODDETAILS_URL&virtuemart_product_id=$i_id'>$i_name</a><br/>";
+						$e_html_msg .= $logger->{'log'}."<br/><br/>";
+					}				
 				}
-				if ( $logger->{'warning'} == 1 ) {
-					$e_message .= "# $i_id > $i_name\n";
-					$e_message .= $logger->{'log'}."\n";
-				}				
 			}
 		}
 	}
@@ -126,7 +134,7 @@ sub main()
 	close $fh;
 
 	print "###########################################################\n\n";
-	print "$e_message\n";
+	print "$e_txt_msg\n";
 	
 	#create stock report
 	if ( defined $o_reports ) {
@@ -141,7 +149,7 @@ sub main()
 		my ($import_files) = join(';',$import_prod_files);
 		print "## sending files: $import_files\n";
 		if ( defined $import_files ) {
-			common::send_email($EMAILS_FROM, $EMAILS_TO, $EMAILS_CHECK_SUBJECT, $e_message, $import_files);
+			common::send_email($EMAILS_FROM, $EMAILS_TO, $EMAILS_CHECK_SUBJECT, $e_html_msg, $import_files);
 		}
 	}	
 

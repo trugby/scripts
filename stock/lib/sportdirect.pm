@@ -14,15 +14,19 @@ use common;
 ###################
 # Global variable #
 ###################
-my ($COOKIES)				= $CONSTANT::SHOP_COOKIES->{'sportsdirect'};
-my ($TMP_DIR)				= $CONSTANT::SHOP_TMP_DIR->{'sportsdirect'};
-my ($PRODUCT_IMG_DIR)		= $CONSTANT::SHOP_PROD_IMG_DIR->{'sportsdirect'};
-my ($SHOP_PROD_IMG_PATH)	= $CONSTANT::SHOP_PROD_IMG_PATH->{'sportsdirect'};
-my ($CONV_SIZES)			= $CONSTANT::SHOP_CONV_SIZES->{'sportsdirect'};
-my ($SIZE_TITLE)			= $CONSTANT::SIZE_TITLE;
-my ($PROD_AVAIL)			= $CONSTANT::PROD_AVAILABILITY;
-my ($MAIN_LANG)				= $CONSTANT::MAIN_LANG;
+my ($COOKIES)						= $CONSTANT::SHOP_COOKIES->{'sportsdirect'};
+my ($TMP_DIR)						= $CONSTANT::SHOP_TMP_DIR->{'sportsdirect'};
+my ($PRODUCT_IMG_DIR)				= $CONSTANT::SHOP_PROD_IMG_DIR->{'sportsdirect'};
+my ($SHOP_PROD_IMG_PATH)			= $CONSTANT::SHOP_PROD_IMG_PATH->{'sportsdirect'};
+my ($CONV_SIZES)					= $CONSTANT::SHOP_CONV_SIZES->{'sportsdirect'};
 
+my ($CF_DELIVERY_10_14_VAL)			= $CONSTANT::CF_DELIVERY_10_14_VAL;
+my ($CF_CHOOSE_SIZES_VAL)			= $CONSTANT::CF_CHOOSE_SIZES_VAL;
+my ($CF_PRODUCTS_INIT_TITLE)		= $CONSTANT::CF_PRODUCTS_INIT_TITLE;
+my ($CF_PRODUCTS_INIT_VAL)			= $CONSTANT::CF_PRODUCTS_INIT_VAL;
+my ($CF_SIZE_TITLE)					= $CONSTANT::CF_SIZE_TITLE;
+my ($PROD_AVAIL)					= $CONSTANT::PROD_AVAILABILITY;
+my ($MAIN_LANG)						= $CONSTANT::MAIN_LANG;
 
 #####################
 # Method prototypes #
@@ -457,9 +461,11 @@ sub update_prod_wscan($\$)
 			my (%o_map_sizes) = map { $_ => 1 } @{$o_sizes};
 			my (%i_map_sizes) = map { $_ => 1 } @{$i_report->{'sizes'}};			
 			foreach my $s (@{$i_report->{'sizes'}}) {
-				unless ( exists $o_map_sizes{$s} ) {
-					$log_cont .= "Out of stock the following sizes: " if ($log_cont eq '');		
-					$log_cont .= "$s ";
+				if ( ($s ne $CF_DELIVERY_10_14_VAL) and ($s ne $CF_CHOOSE_SIZES_VAL) ) {
+					unless ( exists $o_map_sizes{$s} ) {
+						$log_cont .= "Out of stock the following sizes: " if ($log_cont eq '');		
+						$log_cont .= "$s ";
+					}					
 				}
 			}
 			foreach my $s (@{$o_sizes}) {
@@ -514,9 +520,10 @@ sub print_down_prod($$)
 	my ($price) = '';
 	my ($categories) = '';
 	my ($availability) = '';
-	my ($cust_title) = '';
-	my ($cust_val) = '';
-	my ($cust_order) = '';
+	my ($cust_title) = $CF_PRODUCTS_INIT_TITLE;
+	my ($cust_val) = $CF_PRODUCTS_INIT_VAL;
+	my ($cust_order) = '1~2~';
+	my ($num_order) = '3';	
 	my ($img_names) = '';
 	my ($img_paths) = '';
 	my ($img_order) = '';
@@ -595,13 +602,14 @@ sub print_down_prod($$)
 		}		
 		
 		if ( exists $o_report->{'sizes'} and defined $o_report->{'sizes'} and (scalar(@{$o_report->{'sizes'}}) > 0) ) {		
-			for (my $i = 0; $i < scalar(@{$o_report->{'sizes'}}); $i++) {
-				my ($sizes) = $o_report->{'sizes'}->[$i];
+			#for (my $i = 0; $i < scalar(@{$o_report->{'sizes'}}); $i++) {
+			#	my ($sizes) = $o_report->{'sizes'}->[$i];
+			foreach my $sizes (@{$o_report->{'sizes'}}) {
 				if ( defined $sizes and ($sizes ne '') ) {
-					$cust_title .= $SIZE_TITLE.'~';
+					$cust_title .= $CF_SIZE_TITLE.'~';
 					$cust_val .= $sizes.'~';
-					my ($num) = $i+1;
-					$cust_order .= $num.'~';
+					$cust_order .= $num_order.'~';
+					$num_order += 1;
 				}
 			}
 			$cust_title =~ s/\~$//g;
@@ -692,9 +700,10 @@ sub print_update_prod($$$)
 	my ($published) = '0';
 	my ($id) = '';
 	my ($price) = '';
-	my ($cust_title) = '';
-	my ($cust_val) = '';
-	my ($cust_order) = '';
+	my ($cust_title) = $CF_PRODUCTS_INIT_TITLE.'~';
+	my ($cust_val) = $CF_PRODUCTS_INIT_VAL.'~';
+	my ($cust_order) = '1~2~';
+	my ($num_order) = '3';
 	
 	if ( exists $o_report->{'published'} and defined $o_report->{'published'} and ($o_report->{'published'} ne '') ) {
 		$published = $o_report->{'published'};
@@ -714,13 +723,14 @@ sub print_update_prod($$$)
 		else { $published = '0' }
 		
 		if ( exists $o_report->{'sizes'} and defined $o_report->{'sizes'} and (scalar(@{$o_report->{'sizes'}}) > 0) ) {		
-			for (my $i = 0; $i < scalar(@{$o_report->{'sizes'}}); $i++) {
-				my ($sizes) = $o_report->{'sizes'}->[$i];
+			#for (my $i = 0; $i < scalar(@{$o_report->{'sizes'}}); $i++) {
+			#	my ($sizes) = $o_report->{'sizes'}->[$i];
+			foreach my $sizes (@{$o_report->{'sizes'}}) {
 				if ( defined $sizes and ($sizes ne '') ) {
-					$cust_title .= $SIZE_TITLE.'~';
+					$cust_title .= $CF_SIZE_TITLE.'~';
 					$cust_val .= $sizes.'~';
-					my ($num) = $i+1;
-					$cust_order .= $num.'~';
+					$cust_order .= $num_order.'~';
+					$num_order += 1;					
 				}
 			}
 			$cust_title =~ s/\~$//g;
